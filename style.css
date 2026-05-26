@@ -1,350 +1,364 @@
 /* ==========================================================
-   1. GLOBAL ARCHITECTURE & TRANSITIONS
+   1. CORE APP STYLES & RESET ENGINE
    ========================================================== */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    background: var(--bg-gradient);
     min-height: 100vh;
-    min-height: -webkit-fill-available;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: var(--text-main);
-    padding: 1rem;
-    overflow-x: hidden;
-    font-family: var(--font-stack);
+    padding: 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-html {
-    height: -webkit-fill-available;
+/* Base Fullscreen Animated Layer Engine */
+.bg-animation-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    transition: all 0.8s ease;
+}
+
+/* Fluid Global Ambient Background Blobs */
+.bg-animation-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: -1;
+    opacity: 0;
+    transition: all 0.8s ease;
 }
 
 .container {
-    background: var(--card-bg);
-    backdrop-filter: blur(var(--blur-amount));
-    -webkit-backdrop-filter: blur(var(--blur-amount));
-    border: var(--card-border);
     width: 100%;
-    max-width: 480px;
-    padding: 1.75rem;
-    border-radius: var(--radius-main);
-    box-shadow: var(--container-shadow);
-    animation: fadeInContainer 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+    max-width: 440px;
+    padding: 30px 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 10;
 }
 
 h1 {
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: 1.6rem;
     text-align: center;
-    margin-bottom: 1.75rem;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: var(--letter-spacing-h1);
-    text-transform: var(--text-transform-h1);
+    margin-bottom: 25px;
+    font-weight: 700;
+    transition: color 0.3s;
 }
 
-/* ==========================================================
-   2. UNIQUE THEME DEFINITIONS (EACH DRICHTLY DIFFERENT)
-   ========================================================== */
-
-/* --- THEME 1: SPACE INDIGO (Modern Sleek Gloss) --- */
-body[data-theme="indigo"] {
-    --font-stack: '-apple-system', BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --bg-gradient: linear-gradient(135deg, #090d16 0%, #11102f 50%, #1e1b4b 100%);
-    --card-bg: rgba(22, 30, 49, 0.75);
-    --blur-amount: 20px;
-    --card-border: 1px solid rgba(255, 255, 255, 0.08);
-    --radius-main: 24px;
-    --radius-input: 12px;
-    --container-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    --input-bg: #0b0f19;
-    --border-color: #1e293b;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-    --primary-btn: linear-gradient(135deg, #4f46e5 0%, #3b35b3 100%);
-    --accent-glow: rgba(99, 102, 241, 0.3);
-    --letter-spacing-h1: -0.5px;
-    --text-transform-h1: none;
-}
-
-/* --- THEME 2: CYBERPUNK NEON (Sharp, Electric, Glowing) --- */
-body[data-theme="cyber"] {
-    --font-stack: 'Impact', 'Arial Black', sans-serif;
-    --bg-gradient: linear-gradient(135deg, #030207 0%, #0c0014 100%);
-    --card-bg: rgba(13, 2, 24, 0.9);
-    --blur-amount: 0px;
-    --card-border: 3px solid #f43f5e;
-    --radius-main: 0px; /* Sharp retro corners */
-    --radius-input: 0px;
-    --container-shadow: 0 0 25px #f43f5e, inset 0 0 15px rgba(244, 63, 94, 0.2);
-    --input-bg: #000000;
-    --border-color: #00f5ff;
-    --text-main: #00f5ff;
-    --text-muted: #f43f5e;
-    --accent-gradient: linear-gradient(90deg, #f43f5e 0%, #d946ef 100%);
-    --primary-btn: linear-gradient(135deg, #f43f5e 0%, #701a75 100%);
-    --accent-glow: rgba(0, 245, 255, 0.5);
-    --letter-spacing-h1: 2px;
-    --text-transform-h1: uppercase;
-}
-/* Unique modifier button adjustments for cyberpunk */
-body[data-theme="cyber"] button {
-    text-transform: uppercase;
-    border: 1px solid #00f5ff;
-}
-
-/* --- THEME 3: FOREST MINT (Soft, Organic, Minimalist) --- */
-body[data-theme="forest"] {
-    --font-stack: 'Georgia', serif; /* Soft academic editorial look */
-    --bg-gradient: linear-gradient(135deg, #0f1c1a 0%, #070f0e 100%);
-    --card-bg: rgba(20, 36, 33, 0.65);
-    --blur-amount: 12px;
-    --card-border: 1px solid rgba(45, 212, 191, 0.15);
-    --radius-main: 40px; /* Pill-soft pillowed corners */
-    --radius-input: 20px;
-    --container-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    --input-bg: #0a1211;
-    --border-color: #115e59;
-    --text-main: #f0fdf4;
-    --text-muted: #a7f3d0;
-    --accent-gradient: linear-gradient(135deg, #2dd4bf 0%, #4ade80 100%);
-    --primary-btn: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
-    --accent-glow: rgba(45, 212, 191, 0.15);
-    --letter-spacing-h1: 0.5px;
-    --text-transform-h1: none;
-}
-
-/* --- THEME 4: SUNSET GOLD (Warm Vibrant Fluidity) --- */
-body[data-theme="sunset"] {
-    --font-stack: 'Segoe UI', Tahoma, Geneva, sans-serif;
-    --bg-gradient: linear-gradient(135deg, #240a05 0%, #0f0301 100%);
-    --card-bg: rgba(44, 17, 11, 0.85);
-    --blur-amount: 25px;
-    --card-border: 1px solid rgba(251, 146, 60, 0.2);
-    --radius-main: 16px;
-    --radius-input: 8px;
-    --container-shadow: 5px 5px 0px #7c2d12; /* Pop-art offset shadow look */
-    --input-bg: #170704;
-    --border-color: #9a3412;
-    --text-main: #fff7ed;
-    --text-muted: #fdba74;
-    --accent-gradient: linear-gradient(135deg, #f97316 0%, #facc15 100%);
-    --primary-btn: linear-gradient(135deg, #ea580c 0%, #9a3412 100%);
-    --accent-glow: rgba(250, 204, 21, 0.25);
-    --letter-spacing-h1: -1px;
-    --text-transform-h1: none;
-}
-
-/* --- THEME 5: MATRIX CODE (Monochrome Retro Arcade Terminal) --- */
-body[data-theme="matrix"] {
-    --font-stack: 'Courier New', Courier, monospace; /* Monospaced text standard */
-    --bg-gradient: radial-gradient(circle, #000c04 0%, #000000 100%);
-    --card-bg: rgba(0, 5, 1, 0.95);
-    --blur-amount: 0px;
-    --card-border: 1px solid #22c55e;
-    --radius-main: 4px;
-    --radius-input: 4px;
-    --container-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
-    --input-bg: #000000;
-    --border-color: #166534;
-    --text-main: #22c55e;
-    --text-muted: #16a34a;
-    --accent-gradient: linear-gradient(to right, #22c55e, #22c55e);
-    --primary-btn: transparent; /* Flat terminal design outline */
-    --accent-glow: rgba(34, 197, 94, 0.4);
-    --letter-spacing-h1: 1px;
-    --text-transform-h1: uppercase;
-}
-/* Matrix custom button override styling elements */
-body[data-theme="matrix"] button {
-    border: 2px solid #22c55e;
-    background: transparent;
-    color: #22c55e;
-    text-shadow: 0 0 5px #22c55e;
-}
-body[data-theme="matrix"] button:hover {
-    background: #22c55e;
-    color: #000000;
-    box-shadow: 0 0 15px #22c55e;
-}
-
-/* ==========================================================
-   3. STRUCTURAL WRAPPERS & SCALING CONTROL PANELS
-   ========================================================== */
-#settings, #display-area {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    width: 100%;
-}
-
-#settings.hidden, #display-area.hidden {
-    display: none !important;
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-}
-
-#settings:not(.hidden), #display-area:not(.hidden) {
-    animation: viewEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.form-group {
-    margin-bottom: 1.25rem;
-}
+.form-group { margin-bottom: 18px; }
 
 label {
     display: block;
     font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 0.4rem;
+    font-weight: 600;
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-select, input[type="number"] {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-input);
-    color: var(--text-main);
-    font-size: 1rem;
-    outline: none;
-    -webkit-appearance: none;
+.checkbox-label-wrapper {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
 }
 
-select:focus, input[type="number"]:focus {
-    border-color: var(--text-main);
-    box-shadow: 0 0 0 4px var(--accent-glow);
+select, input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    outline: none;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    transition: all 0.25s ease;
 }
 
 .checkbox-group {
     display: flex;
-    gap: 1.25rem;
-    background: var(--input-bg);
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-input);
-    border: 1px solid var(--border-color);
+    gap: 15px;
+    padding: 8px 5px;
+}
+
+.checkbox-group.structural-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
 }
 
 .checkbox-group label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 6px;
     margin-bottom: 0;
-    color: var(--text-main);
     cursor: pointer;
-    text-transform: none;
-    letter-spacing: normal;
 }
 
 input[type="checkbox"] {
-    accent-color: var(--border-color);
-    width: 1.2rem;
-    height: 1.2rem;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
 }
 
 button {
     width: 100%;
-    padding: 0.9rem 1.25rem;
-    background: var(--primary-btn);
-    border: none;
-    border-radius: var(--radius-input);
-    color: white;
+    padding: 12px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-    -webkit-tap-highlight-color: transparent;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
-
-button:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.2);
-}
-
-button:active {
-    transform: translateY(1px);
-}
+button:active { transform: scale(0.97); }
 
 #display-area {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 280px;
+    min-height: 260px;
 }
 
 #number-screen {
     font-size: 4.5rem;
-    font-weight: 800;
-    color: var(--text-main);
-    text-shadow: 0 10px 30px var(--accent-glow);
-    margin-bottom: 2rem;
-    min-height: 7rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    min-height: 6rem;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    word-break: break-all;
 }
 
-#repeat-btn {
-    background: linear-gradient(135deg, #ea580c 0%, #ca8a04 100%);
+.hidden { display: none !important; }
+
+
+/* ==========================================================
+   2. RE-ENGINEERED ULTRA-ANIMATED THEME PALETTES
+   ========================================================== */
+
+/* --- 1. SPACE INDIGO (Moving Infinite Nebula Background) --- */
+body[data-theme="indigo"] { background: #0b0f19; color: #f8fafc; }
+body[data-theme="indigo"] .bg-animation-layer {
+    background: linear-gradient(125deg, #0b0f19, #1e1b4b, #0f172a, #111827);
+    background-size: 400% 400%;
+    animation: gradientShift 15s infinite ease-in-out;
+}
+body[data-theme="indigo"] .blob-1 { opacity: 0.35; width: 300px; height: 300px; background: #6366f1; top: -10%; left: -10%; animation: ambientOrbit 12s infinite linear; }
+body[data-theme="indigo"] .blob-2 { opacity: 0.3; width: 350px; height: 350px; background: #a855f7; bottom: -10%; right: -10%; animation: ambientOrbit 16s infinite linear reverse; }
+body[data-theme="indigo"] .container { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+body[data-theme="indigo"] h1 { color: #818cf8; text-shadow: 0 0 15px rgba(129,140,248,0.3); }
+body[data-theme="indigo"] select, body[data-theme="indigo"] input[type="number"] { background: #334155; border-color: #475569; color: #fff; }
+body[data-theme="indigo"] button { background: linear-gradient(135deg, #4f46e5, #6366f1); color: #fff; box-shadow: 0 4px 15px rgba(79,70,229,0.3); }
+body[data-theme="indigo"] button:hover { background: linear-gradient(135deg, #4338ca, #4f46e5); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,0.5); }
+body[data-theme="indigo"] .animate-pop { animation: springyPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* --- 2. CYBERPUNK (Glitch Strobe Neon Background Grid) --- */
+body[data-theme="cyber"] { background: #08020f; color: #00ffcc; }
+body[data-theme="cyber"] .bg-animation-layer {
+    background: linear-gradient(0deg, rgba(255, 0, 127, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 127, 0.05) 1px, transparent 1px);
+    background-size: 25px 25px;
+    animation: cyberGridScroll 4s infinite linear;
+}
+body[data-theme="cyber"]::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%); z-index: 99999; background-size: 100% 4px; pointer-events: none; }
+body[data-theme="cyber"] .blob-1 { opacity: 0.45; width: 300px; height: 300px; background: #ff007f; top: 10%; right: -5%; animation: fastPulse 4s infinite ease-in-out; filter: blur(70px); }
+body[data-theme="cyber"] .blob-2 { opacity: 0.45; width: 300px; height: 300px; background: #00ffcc; bottom: 5%; left: -5%; animation: fastPulse 4s infinite ease-in-out 2s; filter: blur(70px); }
+body[data-theme="cyber"] .container { background: rgba(21, 5, 36, 0.9); border: 3px solid #ff007f; box-shadow: 0 0 25px rgba(255, 0, 127, 0.5), inset 0 0 15px rgba(255, 0, 127, 0.3); }
+body[data-theme="cyber"] h1 { color: #ffff00; text-shadow: 0 0 10px #ffff00, -2px 2px #ff007f; letter-spacing: 2px; }
+body[data-theme="cyber"] select, body[data-theme="cyber"] input[type="number"] { background: #08020f; border-color: #00ffcc; color: #00ffcc; box-shadow: 0 0 8px rgba(0,255,204,0.2); }
+body[data-theme="cyber"] button { background: transparent; border: 2px solid #ff007f; color: #ff007f; font-weight: 800; letter-spacing: 1px; box-shadow: -4px 4px 0px #00ffcc; }
+body[data-theme="cyber"] button:hover { background: #ff007f; color: #fff; box-shadow: 0 0 15px #ff007f, -6px 6px 0px #00ffcc; transform: translate(2px, -2px); }
+body[data-theme="cyber"] #number-screen { color: #fff; text-shadow: 0 0 10px #fff, -3px -3px 0 #ff007f, 3px 3px 0 #00ffcc; font-weight: 900; }
+body[data-theme="cyber"] .animate-pop { animation: dynamicGlitch 0.2s steps(2) forwards; }
+
+/* --- 3. FOREST MINT (Organic Waves Background) --- */
+body[data-theme="forest"] { background: #07120e; color: #ecfdf5; }
+body[data-theme="forest"] .bg-animation-layer {
+    background: radial-gradient(circle at 20% 30%, #112924 0%, #07120e 70%);
+    animation: pulseGlow 10s infinite ease-in-out;
+}
+body[data-theme="forest"] .blob-1 { opacity: 0.25; width: 450px; height: 450px; background: #10b981; top: -15%; left: -10%; animation: fluidSwell 14s infinite ease-in-out; }
+body[data-theme="forest"] .container { background: rgba(17, 41, 36, 0.9); border: 1px solid rgba(52,211,153,0.15); }
+body[data-theme="forest"] h1 { color: #34d399; text-shadow: 0 4px 12px rgba(52,211,153,0.2); }
+body[data-theme="forest"] select, body[data-theme="forest"] input[type="number"] { background: #091a16; border-color: #1f2937; color: #ecfdf5; }
+body[data-theme="forest"] button { background: #10b981; color: #fff; }
+body[data-theme="forest"] button:hover { background: #059669; transform: scale(1.02); }
+body[data-theme="forest"] #number-screen { color: #34d399; }
+body[data-theme="forest"] .animate-pop { animation: smoothScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* --- 4. SUNSET GOLD (Solar Flare Radiating Background) --- */
+body[data-theme="sunset"] { background: #1f0d03; color: #fff7ed; }
+body[data-theme="sunset"] .bg-animation-layer {
+    background: linear-gradient(180deg, #1f0d03 0%, #3a1502 50%, #1f0d03 100%);
+    background-size: 100% 200%;
+    animation: solarFlow 8s infinite linear;
+}
+body[data-theme="sunset"] .blob-1 { opacity: 0.3; width: 400px; height: 400px; background: #ea580c; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: fastPulse 6s infinite ease-in-out; }
+body[data-theme="sunset"] .container { background: rgba(51, 22, 4, 0.95); border-bottom: 4px solid #f59e0b; }
+body[data-theme="sunset"] h1 { color: #f59e0b; text-shadow: 0 0 12px rgba(245,158,11,0.4); }
+body[data-theme="sunset"] select, body[data-theme="sunset"] input[type="number"] { background: #1f0d03; border-color: #78350f; color: #fff7ed; }
+body[data-theme="sunset"] button { background: linear-gradient(to right, #ea580c, #f97316); color: #fff; }
+body[data-theme="sunset"] button:hover { filter: brightness(1.15); transform: translateY(-1px); }
+body[data-theme="sunset"] #number-screen { color: #ffedd5; text-shadow: 0 0 15px #ea580c; }
+body[data-theme="sunset"] .animate-pop { animation: flipIn 0.25s ease-out forwards; }
+
+/* --- 5. MATRIX CODE (Phosphor Rain Overlay) --- */
+body[data-theme="matrix"] { background: #000000; color: #00ff41; font-family: 'Courier New', Courier, monospace; }
+body[data-theme="matrix"] .bg-animation-layer {
+    background: linear-gradient(rgba(0, 255, 65, 0.1) 50%, transparent 50%), linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+    background-size: 100% 8px, 20px 100%;
+    animation: matrixRainEffects 20s infinite linear;
+}
+body[data-theme="matrix"] .container { background: rgba(5, 5, 5, 0.92); border: 1px solid #00ff41; box-shadow: 0 0 15px rgba(0,255,65,0.2); }
+body[data-theme="matrix"] h1 { color: #00ff41; text-shadow: 0 0 8px #00ff41; }
+body[data-theme="matrix"] select, body[data-theme="matrix"] input[type="number"] { background: #000; border-color: #00ff41; color: #00ff41; font-family: monospace; }
+body[data-theme="matrix"] button { background: transparent; border: 1px solid #00ff41; color: #00ff41; text-shadow: 0 0 3px #00ff41; }
+body[data-theme="matrix"] button:hover { background: rgba(0, 255, 65, 0.15); box-shadow: 0 0 10px #00ff41; }
+body[data-theme="matrix"] #number-screen { color: #00ff41; text-shadow: 0 0 12px #00ff41; }
+body[data-theme="matrix"] .animate-pop { animation: terminalDrop 0.18s ease-out forwards; }
+
+/* --- 6. NORDIC FROST (Aurora Borealis Horizon Shift) --- */
+body[data-theme="frost"] { background: #e2e8f0; color: #1e293b; }
+body[data-theme="frost"] .bg-animation-layer {
+    background: linear-gradient(215deg, #e2e8f0, #cbd5e1, #bae6fd, #e2e8f0);
+    background-size: 300% 300%;
+    animation: gradientShift 10s infinite ease-in-out;
+}
+body[data-theme="frost"] .blob-1 { opacity: 0.5; width: 350px; height: 350px; background: #38bdf8; top: -5%; right: -5%; animation: fluidSwell 12s infinite ease-in-out; }
+body[data-theme="frost"] .container { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(10px); border: 1px solid #cbd5e1; box-shadow: 0 10px 30px rgba(15,23,42,0.06); }
+body[data-theme="frost"] h1 { color: #0284c7; }
+body[data-theme="frost"] select, body[data-theme="frost"] input[type="number"] { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+body[data-theme="frost"] button { background: #0284c7; color: #fff; box-shadow: 0 4px 10px rgba(2,132,199,0.15); }
+body[data-theme="frost"] button:hover { background: #0369a1; transform: translateY(-2px); }
+body[data-theme="frost"] #number-screen { color: #0f172a; text-shadow: 0 4px 10px rgba(56,189,248,0.2); }
+body[data-theme="frost"] .animate-pop { animation: iceCrack 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+/* --- 7. RETRO ARCADE (Retro Synthewave Horizon line) --- */
+body[data-theme="arcade"] { background: #0d001a; color: #ffff00; font-family: 'Lucida Console', Monaco, monospace; }
+body[data-theme="arcade"] .bg-animation-layer {
+    background: linear-gradient(transparent 70%, #ff00ff 70%, transparent 72%), linear-gradient(90deg, transparent 48%, rgba(0, 255, 255, 0.1) 48%, rgba(0, 255, 255, 0.1) 52%, transparent 52%);
+    background-size: 100% 40px, 40px 100%;
+    animation: solarFlow 5s infinite linear;
+}
+body[data-theme="arcade"] .container { background: #000022; border: 4px dashed #00ffff; box-shadow: 6px 6px 0px #ff00ff; }
+body[data-theme="arcade"] h1 { color: #ff00ff; text-shadow: 3px 3px 0px #00ffff; }
+body[data-theme="arcade"] select, body[data-theme="arcade"] input[type="number"] { background: #000022; border-color: #ffff00; color: #ffff00; }
+body[data-theme="arcade"] button { background: #00ffff; color: #000; font-weight: bold; border-bottom: 4px solid #009999; }
+body[data-theme="arcade"] button:hover { background: #ffff00; border-bottom-color: #999900; transform: translate(1px, 1px); }
+body[data-theme="arcade"] #number-screen { color: #ff00ff; text-shadow: 4px 4px 0px #00ffff; }
+body[data-theme="arcade"] .animate-pop { animation: pixelSnap 0.16s steps(3) forwards; }
+
+/* --- 8. DRACULA DARK (High Contrast Pulsing Background) --- */
+body[data-theme="dracula"] { background: #1e1f29; color: #f8f8f2; font-family: Consolas, monospace; }
+body[data-theme="dracula"] .bg-animation-layer {
+    background: radial-gradient(circle at center, #282a36 0%, #1e1f29 100%);
+    animation: pulseGlow 8s infinite ease-in-out;
+}
+body[data-theme="dracula"] .container { background: #282a36; border-left: 4px solid #bd93f9; }
+body[data-theme="dracula"] h1 { color: #ff79c6; text-shadow: 0 0 10px rgba(255,121,198,0.3); }
+body[data-theme="dracula"] select, body[data-theme="dracula"] input[type="number"] { background: #1e1f29; border-color: #6272a4; color: #f8f8f2; }
+body[data-theme="dracula"] button { background: #bd93f9; color: #282a36; }
+body[data-theme="dracula"] button:hover { background: #ff79c6; color: #fff; box-shadow: 0 0 12px rgba(255,121,198,0.5); }
+body[data-theme="dracula"] #number-screen { color: #50fa7b; text-shadow: 0 0 8px rgba(80,250,123,0.4); }
+body[data-theme="dracula"] .animate-pop { animation: strobePop 0.18s linear forwards; }
+
+/* --- 9. SANDSTORM (Creeping Desert Storm Engine) --- */
+body[data-theme="sandstorm"] { background: #140e09; color: #fef3c7; }
+body[data-theme="sandstorm"] .bg-animation-layer {
+    background: linear-gradient(45deg, #140e09 25%, #23180f 50%, #140e09 75%);
+    background-size: 200% 200%;
+    animation: gradientShift 12s infinite linear;
+}
+body[data-theme="sandstorm"] .container { background: #2b1f13; border: 2px solid #b45309; }
+body[data-theme="sandstorm"] h1 { color: #f59e0b; text-transform: uppercase; }
+body[data-theme="sandstorm"] select, body[data-theme="sandstorm"] input[type="number"] { background: #140e09; border-color: #b45309; color: #fef3c7; }
+body[data-theme="sandstorm"] button { background: #d97706; color: #fff; }
+body[data-theme="sandstorm"] button:hover { background: #b45309; }
+body[data-theme="sandstorm"] #number-screen { color: #f59e0b; text-shadow: 2px 2px 0px #78350f; }
+body[data-theme="sandstorm"] .animate-pop { animation: stampPop 0.15s cubic-bezier(0.11, 0, 0, 1) forwards; }
+
+/* --- 10. LUXURY GOLD (Opulent Liquid Gold Swirling Gradient) --- */
+body[data-theme="luxury"] { background: #050505; color: #ffffff; }
+body[data-theme="luxury"] .bg-animation-layer {
+    background: linear-gradient(135deg, #050505 0%, #1a150b 45%, #0a0a0a 70%, #050505 100%);
+    background-size: 300% 300%;
+    animation: gradientShift 8s infinite ease-in-out;
+}
+body[data-theme="luxury"] .blob-1 { opacity: 0.22; width: 450px; height: 450px; background: radial-gradient(circle, #d4af37 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); animation: luxuryBreathe 8s infinite ease-in-out; }
+body[data-theme="luxury"] .container { background: #111111; border: 1px solid #d4af37; box-shadow: 0 25px 70px rgba(0,0,0,0.85); }
+body[data-theme="luxury"] h1 { background: linear-gradient(90deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #bf953f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 400% auto; animation: textShine 6s linear infinite; font-family: Garamond, Baskerville, serif; letter-spacing: 1px; }
+body[data-theme="luxury"] select, body[data-theme="luxury"] input[type="number"] { background: #0a0a0a; border-color: #333; color: #ffffff; }
+body[data-theme="luxury"] select:focus, body[data-theme="luxury"] input[type="number"]:focus { border-color: #d4af37; }
+body[data-theme="luxury"] button { background: transparent; border: 1px solid #d4af37; color: #d4af37; letter-spacing: 1px; text-transform: uppercase; background-image: linear-gradient(120deg, transparent 0%, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%, transparent 100%); background-size: 200% 100%; animation: buttonShineSweep 4.5s infinite linear; }
+body[data-theme="luxury"] button:hover { background-color: #d4af37; color: #000; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
+body[data-theme="luxury"] #number-screen { color: #ffffff; text-shadow: 0 0 15px rgba(212,175,55,0.6); font-weight: 300; }
+body[data-theme="luxury"] .animate-pop { animation: luxurySmoothZoom 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+
+
+/* ==========================================================
+   3. BACKEND ANIMATION LOGIC ENGINE & TIMELINES
+   ========================================================== */
+
+/* Background Vector Shifts */
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes cyberGridScroll {
+    from { background-position: 0 0; }
+    to { background-position: 25px 25px; }
+}
+@keyframes solarFlow {
+    from { background-position: 0 0; }
+    to { background-position: 0 200px; }
+}
+@keyframes pulseGlow {
+    0%, 100% { filter: brightness(0.9) contrast(1); }
+    50% { filter: brightness(1.15) contrast(1.05); }
+}
+@keyframes matrixRainEffects {
+    from { background-position: 0 0; }
+    to { background-position: 0 400px; }
 }
 
-.animate-pop {
-    animation: numberPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+/* Ambient Orbit Engine */
+@keyframes ambientOrbit { from { transform: rotate(0deg) translate(20px) rotate(0deg); } to { transform: rotate(360deg) translate(20px) rotate(-360deg); } }
+@keyframes fastPulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; } }
+@keyframes fluidSwell { 0%, 100% { border-radius: 50% 50% 50% 50%; } 50% { border-radius: 30% 70% 60% 40%; transform: translate(15px, -15px); } }
+@keyframes luxuryBreathe { 0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(0.9); } 50% { opacity: 0.3; transform: translate(-50%, -50%) scale(1.15); } }
+@keyframes textShine { 0% { background-position: 0% 50%; } 100% { background-position: 400% 50%; } }
+@keyframes buttonShineSweep { 0% { background-position: 150%; } 100% { background-position: -50%; } }
 
-.animate-pulse-slow {
-    animation: textPulse 1.4s ease-in-out infinite;
+/* Pop Kinematics */
+@keyframes springyPop {
+    0% { transform: scale(0.6) translateY(10px); opacity: 0; }
+    70% { transform: scale(1.06); }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
 }
-
-#voice-config-section {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: var(--radius-input);
-    padding: 1rem;
-    margin-top: 1rem;
-    border: 1px dashed var(--border-color);
+@keyframes dynamicGlitch {
+    0% { transform: skewX(-12deg) scale(0.9); filter: hue-rotate(45deg); opacity: 0.8; }
+    50% { transform: skewX(12deg) scale(1.08); filter: contrast(1.4); }
+    100% { transform: skewX(0deg) scale(1); filter: none; opacity: 1; }
 }
-
-.hidden {
-    display: none !important;
-}
-
-/* Tablet Upgrades */
-@media (min-width: 481px) {
-    .container { padding: 2.5rem; }
-    h1 { font-size: 2rem; margin-bottom: 2rem; }
-    #number-screen { font-size: 5.75rem; min-height: 8.5rem; }
-    button { padding: 1.05rem; font-size: 1.1rem; }
-}
-
-/* Transitions Core Keyframe Systems */
-@keyframes fadeInContainer {
-    from { opacity: 0; transform: translateY(20px); filter: blur(5px); }
-    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-}
-@keyframes viewEnter {
-    from { opacity: 0; transform: scale(0.96) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-@keyframes numberPop {
-    0% { opacity: 0; transform: scale(0.65) translateY(15px); filter: blur(6px); }
-    70% { transform: scale(1.04) translateY(-2px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
-}
-@keyframes textPulse {
-    0%, 100% { opacity: 0.3; transform: scale(0.95); }
-    50% { opacity: 1; transform: scale(1.05); }
-}
+@keyframes smoothScale { 0% { transform: scale(0.92); filter: blur(3px); opacity: 0.5; } 100% { transform: scale(1); filter: blur(0); opacity: 1; } }
+@keyframes flipIn { 0% { transform: rotateX(-60deg); opacity: 0; } 100% { transform: rotateX(0deg); opacity: 1; } }
+@keyframes terminalDrop { 0% { transform: translateY(-15px); filter: brightness(2); } 100% { transform: translateY(0); filter: brightness(1); } }
+@keyframes iceCrack { 0% { transform: scale(0.8) rotate(-3deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes pixelSnap { 0% { transform: translateX(-15px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+@keyframes strobePop { 0%, 40% { opacity: 0; transform: scale(0.95); } 20%, 70%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes stampPop { 0% { transform: scale(1.5); filter: brightness(2); opacity: 0.3; } 100% { transform: scale(1); filter: brightness(1); opacity: 1; } }
+@keyframes luxurySmoothZoom { 0% { transform: scale(1.15); filter: blur(4px); opacity: 0; } 100% { transform: scale(1); filter: blur(0); opacity: 1; } }
