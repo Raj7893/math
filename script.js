@@ -1,3 +1,4 @@
+// Dynamic UI Component References
 const startBtn = document.getElementById('start-btn');
 const answerBtn = document.getElementById('answer-btn');
 const repeatBtn = document.getElementById('repeat-btn');
@@ -5,17 +6,30 @@ const settingsDiv = document.getElementById('settings');
 const displayArea = document.getElementById('display-area');
 const numberScreen = document.getElementById('number-screen');
 const voiceToggle = document.getElementById('voice-toggle');
-const themeSelect = document.getElementById('theme-select'); // New handle
+const themeSelect = document.getElementById('theme-select');
+
+const digitsSelect = document.getElementById('digits');
+const digitsMainContainer = document.getElementById('digits-main-container');
+const mixDigitsToggle = document.getElementById('mix-digits-toggle');
+const mixDigitsSelector = document.getElementById('mix-digits-selector');
+
+const rowsInput = document.getElementById('rows');
+const opAddCheckbox = document.getElementById('op-add');
+const opSubCheckbox = document.getElementById('op-sub');
+const opMulCheckbox = document.getElementById('op-mul');
+const opDivCheckbox = document.getElementById('op-div');
+const speedInput = document.getElementById('speed');
 
 const langSelect = document.getElementById('lang-select');
 const typeSelect = document.getElementById('type-select');
 const styleSelect = document.getElementById('style-select');
 
+// Application Session Cache Structures
 let currentSequence = [];
 let correctAnswer = 0;
 let currentIndex = 0;
 let timeoutId = null;
-let savedSpeed = 1500;
+let savedSpeed = 1000;
 let savedUseVoice = true;
 
 let allSystemVoices = [];
@@ -42,10 +56,118 @@ function getFullLanguageName(langTag) {
     return name;
 }
 
-// Global Theme Listener Switch hook
+/* ==========================================================
+   STATE SYNC PREFERENCES ENGINE (LOCALSTORAGE)
+   ========================================================== */
+
+function saveSettingsToStorage() {
+    const activeMixPool = [];
+    document.querySelectorAll('.mix-digit-pool:checked').forEach(cb => {
+        activeMixPool.push(cb.value);
+    });
+
+    const appSettings = {
+        theme: themeSelect.value,
+        digits: digitsSelect.value,
+        mixDigits: mixDigitsToggle.checked,
+        mixDigitsPool: activeMixPool,
+        rows: rowsInput.value,
+        opAdd: opAddCheckbox.checked,
+        opSub: opSubCheckbox.checked,
+        opMul: opMulCheckbox.checked,
+        opDiv: opDivCheckbox.checked,
+        speed: speedInput.value,
+        voiceEnabled: voiceToggle.checked,
+        voiceLang: langSelect.value,
+        voiceType: typeSelect.value,
+        voiceStyle: styleSelect.value
+    };
+    localStorage.setItem('mathTrainerSettings', JSON.stringify(appSettings));
+}
+
+function loadSettingsFromStorage() {
+    const savedData = localStorage.getItem('mathTrainerSettings');
+    if (!savedData) return;
+
+    try {
+        const config = JSON.parse(savedData);
+        
+        if (config.theme) {
+            themeSelect.value = config.theme;
+            document.body.setAttribute('data-theme', config.theme);
+        }
+        if (config.digits) digitsSelect.value = config.digits;
+        
+        if (config.hasOwnProperty('mixDigits')) {
+            mixDigitsToggle.checked = config.mixDigits;
+            mixDigitsSelector.className = config.mixDigits ? "checkbox-group" : "hidden checkbox-group";
+            digitsMainContainer.className = config.mixDigits ? "form-group hidden" : "form-group";
+        }
+
+        if (config.mixDigitsPool) {
+            document.querySelectorAll('.mix-digit-pool').forEach(cb => {
+                cb.checked = config.mixDigitsPool.includes(cb.value);
+            });
+        }
+
+        if (config.rows) rowsInput.value = config.rows;
+        if (config.speed) speedInput.value = config.speed;
+        
+        if (config.hasOwnProperty('opAdd')) opAddCheckbox.checked = config.opAdd;
+        if (config.hasOwnProperty('opSub')) opSubCheckbox.checked = config.opSub;
+        if (config.hasOwnProperty('opMul')) opMulCheckbox.checked = config.opMul;
+        if (config.hasOwnProperty('opDiv')) opDivCheckbox.checked = config.opDiv;
+        
+        if (config.hasOwnProperty('voiceEnabled')) {
+            voiceToggle.checked = config.voiceEnabled;
+            document.getElementById('voice-config-section').className = config.voiceEnabled ? "" : "hidden";
+        }
+        if (config.voiceType) typeSelect.value = config.voiceType;
+        if (config.voiceStyle) styleSelect.value = config.voiceStyle;
+        
+        if (config.voiceLang) langSelect.dataset.savedValue = config.voiceLang;
+
+    } catch (e) {
+        console.error("Local configuration restore exception: ", e);
+    }
+}
+
+/* ==========================================================
+   UI BINDINGS & REGISTRATION HANDLERS
+   ========================================================== */
+
 themeSelect.addEventListener('change', (e) => {
     document.body.setAttribute('data-theme', e.target.value);
+    saveSettingsToStorage();
 });
+
+mixDigitsToggle.addEventListener('change', () => {
+    const isChecked = mixDigitsToggle.checked;
+    mixDigitsSelector.className = isChecked ? "checkbox-group" : "hidden checkbox-group";
+    digitsMainContainer.className = isChecked ? "form-group hidden" : "form-group";
+    saveSettingsToStorage();
+});
+
+document.querySelectorAll('.mix-digit-pool').forEach(cb => {
+    cb.addEventListener('change', saveSettingsToStorage);
+});
+
+[digitsSelect, rowsInput, opAddCheckbox, opSubCheckbox, opMulCheckbox, opDivCheckbox, speedInput, voiceToggle, typeSelect, styleSelect].forEach(element => {
+    element.addEventListener('change', saveSettingsToStorage);
+});
+
+langSelect.addEventListener('change', () => {
+    autoSelectBestVoice();
+    saveSettingsToStorage();
+});
+
+voiceToggle.addEventListener('change', () => {
+    document.getElementById('voice-config-section').className = voiceToggle.checked ? "" : "hidden";
+});
+
+/* ==========================================================
+   SPEECH AUDIO SYNTHESIS LOGIC ENGINE
+   ========================================================== */
 
 function initVoiceSetup() {
     allSystemVoices = window.speechSynthesis.getVoices();
@@ -55,7 +177,7 @@ function initVoiceSetup() {
     
     langSelect.innerHTML = `
         <option value="all">All System Languages</option>
-        <option value="en-US" selected>English</option>
+        <option value="en-US">English</option>
         <option value="hi-IN">Hindi (हिन्दी)</option>
         <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
     `;
@@ -75,7 +197,13 @@ function initVoiceSetup() {
         langSelect.appendChild(option);
     });
 
-    langSelect.value = "en-US";
+    if (langSelect.dataset.savedValue) {
+        langSelect.value = langSelect.dataset.savedValue;
+        delete langSelect.dataset.savedValue;
+    } else {
+        langSelect.value = "en-US";
+    }
+    
     autoSelectBestVoice();
 }
 
@@ -121,14 +249,13 @@ function autoSelectBestVoice() {
 if (typeof window.speechSynthesis !== 'undefined' && window.speechSynthesis.onvoiceschanged !== undefined) {
     window.speechSynthesis.onvoiceschanged = initVoiceSetup;
 }
+
+loadSettingsFromStorage();
 initVoiceSetup();
 
-langSelect.addEventListener('change', autoSelectBestVoice);
-typeSelect.addEventListener('change', autoSelectBestVoice);
-
-voiceToggle.addEventListener('change', () => {
-    document.getElementById('voice-config-section').className = voiceToggle.checked ? "" : "hidden";
-});
+/* ==========================================================
+   MATHEMATICAL RUNTIME CALCULATION PIPELINE
+   ========================================================== */
 
 startBtn.addEventListener('click', startSession);
 answerBtn.addEventListener('click', showAnswer);
@@ -143,37 +270,93 @@ function convertToIndianPhonetics(numberStr, lang) {
     return arr.map(digit => mapSource[parseInt(digit)] || "").join(" ");
 }
 
+function getRandomNumberFromSelection(chosenDigitsValue, isMixActive, checkedPoolValues) {
+    let finalDigits = parseInt(chosenDigitsValue);
+    
+    if (isMixActive && checkedPoolValues.length > 0) {
+        const randIndex = Math.floor(Math.random() * checkedPoolValues.length);
+        finalDigits = parseInt(checkedPoolValues[randIndex]);
+    }
+
+    const min = Math.pow(10, finalDigits - 1);
+    const max = Math.pow(10, finalDigits) - 1;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function startSession() {
-    const digits = parseInt(document.getElementById('digits').value);
-    let rows = parseInt(document.getElementById('rows').value);
-    const allowAdd = document.getElementById('op-add').checked;
-    const allowSub = document.getElementById('op-sub').checked;
-    savedSpeed = parseFloat(document.getElementById('speed').value) * 1000;
+    let rows = parseInt(rowsInput.value);
+    const allowAdd = opAddCheckbox.checked;
+    const allowSub = opSubCheckbox.checked;
+    const allowMul = opMulCheckbox.checked;
+    const allowDiv = opDivCheckbox.checked;
+    
+    savedSpeed = parseFloat(speedInput.value) * 1000;
     savedUseVoice = voiceToggle.checked;
 
-    if (!allowAdd && !allowSub) {
-        alert('Please select at least one operation (Addition or Subtraction).');
+    const isMixActive = mixDigitsToggle.checked;
+    const checkedPool = Array.from(document.querySelectorAll('.mix-digit-pool:checked')).map(cb => cb.value);
+
+    if (!allowAdd && !allowSub && !allowMul && !allowDiv) {
+        alert('Please select at least one operation.');
+        return;
+    }
+    if (isMixActive && checkedPool.length === 0) {
+        alert('Please select at least one digit size to mix.');
         return;
     }
     if (isNaN(rows) || rows < 1) rows = 1;
     if (rows > 40) rows = 40;
 
-    const min = Math.pow(10, digits - 1);
-    const max = Math.pow(10, digits) - 1;
-
     currentSequence = [];
     let runningTotal = 0;
 
     for (let i = 0; i < rows; i++) {
-        let num = Math.floor(Math.random() * (max - min + 1)) + min;
+        let num = getRandomNumberFromSelection(digitsSelect.value, isMixActive, checkedPool);
+        
         if (i === 0) {
             currentSequence.push({ op: '+', val: num });
             runningTotal += num;
         } else {
-            let op = allowAdd && allowSub ? (Math.random() < 0.5 ? '+' : '-') : (allowSub ? '-' : '+');
-            if (op === '-' && runningTotal - num < 0) op = '+';
+            let allowedOps = [];
+            if (allowAdd) allowedOps.push('+');
+            if (allowSub) allowedOps.push('-');
+            if (allowMul) allowedOps.push('*');
+            if (allowDiv) allowedOps.push('/');
+
+            let op = allowedOps[Math.floor(Math.random() * allowedOps.length)];
+
+            if (op === '-' && runningTotal - num < 0) {
+                if (allowAdd) op = '+';
+                else num = Math.floor(Math.random() * (runningTotal || 1)) || 1;
+            }
+
+            if (op === '*') {
+                if (runningTotal > 100 || num > 12) {
+                    num = Math.floor(Math.random() * 10) + 2; 
+                }
+                if (runningTotal * num > 99999) {
+                    op = allowSub && runningTotal > 50 ? '-' : '+';
+                }
+            }
+
+            if (op === '/') {
+                let divisors = [];
+                for (let d = 2; d <= 20; d++) {
+                    if (runningTotal % d === 0 && runningTotal / d > 0) divisors.push(d);
+                }
+                if (divisors.length > 0) {
+                    num = divisors[Math.floor(Math.random() * divisors.length)];
+                } else {
+                    op = allowAdd ? '+' : (allowSub && runningTotal > 10 ? '-' : '+');
+                }
+            }
+
+            if (op === '+') runningTotal += num;
+            else if (op === '-') runningTotal -= num;
+            else if (op === '*') runningTotal *= num;
+            else if (op === '/') runningTotal /= num;
+
             currentSequence.push({ op: op, val: num });
-            runningTotal = op === '+' ? runningTotal + num : runningTotal - num;
         }
     }
 
@@ -189,16 +372,11 @@ function startSession() {
     runFlash(savedSpeed, savedUseVoice);
 }
 
-function triggerPopAnimation(text, isPulse = false) {
+function triggerPopAnimation(text) {
     numberScreen.innerText = text;
     numberScreen.className = ""; 
     void numberScreen.offsetWidth; 
-    
-    if (isPulse) {
-        numberScreen.classList.add('animate-pulse-slow');
-    } else {
-        numberScreen.classList.add('animate-pop');
-    }
+    numberScreen.classList.add('animate-pop');
 }
 
 function runFlash(speed, useVoice) {
@@ -208,40 +386,55 @@ function runFlash(speed, useVoice) {
     function showNext() {
         if (currentIndex < currentSequence.length) {
             const item = currentSequence[currentIndex];
-            const displaySign = item.op === '-' ? '-' : '';
-            const visualText = `${displaySign}${item.val}`;
+            let displaySign = "";
+            if (item.op === '-') displaySign = "-";
+            else if (item.op === '*') displaySign = "× ";
+            else if (item.op === '/') displaySign = "÷ ";
             
-            triggerPopAnimation(visualText);
+            triggerPopAnimation(`${displaySign}${item.val}`);
 
             if (useVoice) {
                 let speechText = "";
-                let minusWord = "minus, ";
+                let opWord = "";
 
-                if (chosenLang === 'hi') minusWord = voiceIsFallback ? "ghatao, " : "घटाओ, ";
-                if (chosenLang === 'pa') minusWord = voiceIsFallback ? "ghatao, " : "ਘਟਾਓ, ";
-                if (chosenLang === 'fr') minusWord = "moins, ";
-                if (chosenLang === 'es') minusWord = "menos, ";
+                if (item.op === '-') {
+                    opWord = "minus, ";
+                    if (chosenLang === 'hi') opWord = voiceIsFallback ? "ghatao, " : "घटाओ, ";
+                    if (chosenLang === 'pa') opWord = voiceIsFallback ? "ghatao, " : "ਘਟਾਓ, ";
+                    if (chosenLang === 'fr') opWord = "moins, ";
+                    if (chosenLang === 'es') opWord = "menos, ";
+                } else if (item.op === '*') {
+                    opWord = "multiply by, ";
+                    if (chosenLang === 'hi') opWord = "guna, ";
+                    if (chosenLang === 'pa') opWord = "guna, ";
+                    if (chosenLang === 'fr') opWord = "multiplié par, ";
+                    if (chosenLang === 'es') opWord = "multiplicado por, ";
+                } else if (item.op === '/') {
+                    opWord = "divided by, ";
+                    if (chosenLang === 'hi') opWord = "bhaag, ";
+                    if (chosenLang === 'pa') opWord = "bhaag, ";
+                    if (chosenLang === 'fr') opWord = "divisé par, ";
+                    if (chosenLang === 'es') opWord = "dividido por, ";
+                }
 
                 if (voiceIsFallback) {
                     const phoneticNumbers = convertToIndianPhonetics(item.val.toString(), chosenLang);
-                    speechText = (item.op === '-') ? minusWord + phoneticNumbers : phoneticNumbers;
+                    speechText = opWord + phoneticNumbers;
                 } else {
                     if (readingStyle === 'digits') {
                         const digitsArray = item.val.toString().split("").join(" ");
-                        speechText = (item.op === '-') ? minusWord + digitsArray : digitsArray;
+                        speechText = opWord + digitsArray;
                     } else {
-                        speechText = (item.op === '-') ? minusWord + item.val : item.val.toString();
+                        speechText = opWord + item.val.toString();
                     }
                 }
                 
                 const utterance = new SpeechSynthesisUtterance(speechText);
                 if (selectedVoice) utterance.voice = selectedVoice;
-                
-                utterance.pitch = 1.02 + (Math.random() * 0.04 - 0.02); 
 
-                if (speed < 1000) utterance.rate = 1.6; 
-                else if (speed < 1500) utterance.rate = 1.2;
-                else utterance.rate = 0.95;
+                if (speed < 1000) utterance.rate = 1.5; 
+                else if (speed < 1500) utterance.rate = 1.15;
+                else utterance.rate = 1.0;
 
                 utterance.onend = function() {
                     currentIndex++;
@@ -257,7 +450,7 @@ function runFlash(speed, useVoice) {
                 timeoutId = setTimeout(showNext, speed);
             }
         } else {
-            triggerPopAnimation("...", true);
+            triggerPopAnimation("...");
             if (useVoice) {
                 let closingPhrase = "That is";
                 if (chosenLang === 'hi') closingPhrase = voiceIsFallback ? "barabar hai" : "बराबर है";
@@ -267,8 +460,6 @@ function runFlash(speed, useVoice) {
 
                 const finalUtterance = new SpeechSynthesisUtterance(closingPhrase);
                 if (selectedVoice) finalUtterance.voice = selectedVoice;
-                finalUtterance.pitch = 0.93; 
-                finalUtterance.rate = 0.9;
                 
                 finalUtterance.onend = function() {
                     triggerPopAnimation("?");
